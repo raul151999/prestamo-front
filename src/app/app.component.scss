@@ -1,0 +1,171 @@
+// Variables de color
+$primary-color: #007bff;
+$primary-hover: darken($primary-color, 10%);
+$danger-color: #dc3545;
+$danger-hover: darken($danger-color, 10%);
+$light-green: #11e36c; // Verde suave de fondo
+$primary-green: #4CAF50; // Verde para botones
+$dark-color: #343a40;
+$border-color: #ced4da;
+$input-background: #f1f3f5;
+
+// Estilos generales
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: $light-green(to bottom right, #e0f7fa, #80deea); // Fondo verde suave
+  margin: 0;
+  padding: 0;
+}
+
+// Container (caja central)
+.container {
+    background: transparent; // No uses fondo blanco aquí si quieres ver el fondo general
+    max-width: 960px;
+    margin: 3rem auto;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+// Títulos
+h1, h2 {
+  font-weight: 700;
+  color: $dark-color;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+// Formularios
+.form-group {
+  margin-bottom: 1.5rem;
+
+  label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+    color: $dark-color;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: $input-background;
+    transition: border-color 0.3s ease;
+
+    &:focus {
+      border-color: $primary-green;
+      outline: none;
+    }
+
+    &[disabled] {
+      background-color: #f8f9fa;
+      opacity: 0.7;
+    }
+  }
+
+  .text-danger {
+    font-size: 0.9rem;
+    color: $danger-color;
+    margin-top: 0.25rem;
+  }
+}
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    &:hover {
+      background-color: darken(#007bff, 10%);
+      border-color: darken(#007bff, 12%);
+    }
+  }
+  
+  .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    &:hover {
+      background-color: darken(#28a745, 10%);
+      border-color: darken(#28a745, 12%);
+    }
+  }
+  
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    &:hover {
+      background-color: darken(#6c757d, 10%);
+      border-color: darken(#6c757d, 12%);
+    }
+  }
+  
+// Botones
+.btn {
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.btn-primary {
+    background-color: $primary-green;
+    color: white;
+
+    &:hover {
+      background-color: darken($primary-green, 10%);
+    }
+  }
+
+  &.btn-danger {
+    background-color: $danger-color;
+    color: white;
+
+    &:hover {
+      background-color: $danger-hover;
+    }
+  }
+}
+
+// Tablas
+.table {
+  width: 100%;
+  margin-top: 2rem;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 1rem;
+    border-bottom: 1px solid $border-color;
+    text-align: left;
+    font-size: 1rem;
+  }
+
+  th {
+    background-color: $dark-color;
+    color: white;
+    font-weight: 600;
+  }
+
+  td {
+    background-color: white;
+  }
+
+  tbody tr:hover {
+    background-color: $light-green;
+  }
+
+  .btn-danger {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+// Efectos adicionales
+input[type="text"], input[type="number"], input[type="date"] {
+  &:focus {
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); // Verde suave
+  }
+}

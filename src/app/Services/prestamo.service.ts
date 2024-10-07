@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../config';
 import { Observable } from 'rxjs';
 import { Prestamo } from '../Interfaces/Prestamo';
 @Injectable({

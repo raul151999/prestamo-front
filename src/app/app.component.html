@@ -21,6 +21,11 @@
       <div class="form-group">
         <label for="dniCliente">DNI Cliente:</label>
         <input id="dniCliente" formControlName="dniCliente" class="form-control" />
+        <div *ngIf="agregarPrestamo.get('dniCliente')?.touched && agregarPrestamo.get('dniCliente')?.invalid">
+          <small class="text-danger" *ngIf="agregarPrestamo.get('dniCliente')?.errors?.['required']">DNI es requerido.</small>
+          <small class="text-danger" *ngIf="agregarPrestamo.get('dniCliente')?.errors?.['minlength']">DNI debe tener exactamente 8 dígitos.</small>
+          <small class="text-danger" *ngIf="agregarPrestamo.get('dniCliente')?.errors?.['maxlength']">DNI debe tener exactamente 8 dígitos.</small>
+        </div>
       </div>
       <div class="form-group">
         <label for="nombreCliente">Nombre Cliente:</label>
@@ -37,6 +42,11 @@
       <div class="form-group">
         <label for="telefonoCliente">Teléfono Cliente:</label>
         <input id="telefonoCliente" formControlName="telefonoCliente" class="form-control" />
+        <div *ngIf="agregarPrestamo.get('telefonoCliente')?.touched && agregarPrestamo.get('telefonoCliente')?.invalid">
+          <small class="text-danger" *ngIf="agregarPrestamo.get('telefonoCliente')?.errors?.['required']">El teléfono es requerido.</small>
+          <small class="text-danger" *ngIf="agregarPrestamo.get('telefonoCliente')?.errors?.['minlength']">El teléfono debe tener exactamente 9 dígitos.</small>
+          <small class="text-danger" *ngIf="agregarPrestamo.get('telefonoCliente')?.errors?.['maxlength']">El teléfono debe tener exactamente 9 dígitos.</small>
+        </div>
       </div>
       <div class="form-group">
         <label for="emailCliente">Email Cliente:</label>
@@ -47,16 +57,12 @@
         <input id="montoPrestamo" formControlName="montoPrestamo" type="number" class="form-control" />
       </div>
       <div class="form-group">
-        <label for="interesAplicado">Interés Aplicado (%):</label>
-        <input id="interesAplicado" formControlName="interesAplicado" type="number" class="form-control" />
-      </div>
-      <div class="form-group">
         <label for="plazoMeses">Plazo (Meses):</label>
         <input id="plazoMeses" formControlName="plazoMeses" type="number" class="form-control" />
       </div>
       <div class="form-group">
-        <label for="cuotas">Cuotas:</label>
-        <input id="cuotas" formControlName="cuotas" type="number" class="form-control" />
+        <label for="interesAplicado">Interés Aplicado (%):</label>
+        <input id="interesAplicado" formControlName="interesAplicado" type="number" class="form-control" />
       </div>
       <div class="form-group">
         <label for="montoTotal">Monto Total:</label>
@@ -72,7 +78,11 @@
       </div>
       <div class="form-group">
         <label for="fechaCreacion">Fecha de Creación:</label>
-        <input id="fechaCreacion" formControlName="fechaCreacion" type="date" class="form-control" />
+        <input id="fechaCreacion" formControlName="fechaCreacion" type="date" class="form-control" [disabled]="true"/>
+      </div>
+      <div class="form-group">
+        <label for="fechaTermino">Fecha de Término:</label>
+        <input id="fechaTermino" formControlName="fechaTermino" type="text" class="form-control" placeholder="dd-mm-yyyy" [disabled]="true" />
       </div>
       <button type="submit" class="btn btn-primary">Agregar Préstamo</button>
     </form>
@@ -84,7 +94,13 @@
           <th>DNI Cliente</th>
           <th>Nombre</th>
           <th>Apellido</th>
+          <th>Dirección</th>
+          <th>Telefono</th>
           <th>Monto</th>
+          <th>Monto Total</th>
+          <th>Estado</th>
+          <th>Fecha Creacion</th>
+          <th>Fecha Termino</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -93,7 +109,13 @@
           <td>{{ prestamo.dniCliente }}</td>
           <td>{{ prestamo.nombreCliente }}</td>
           <td>{{ prestamo.apellidoCliente }}</td>
+          <td>{{ prestamo.direccionCliente }}</td>
+          <td>{{ prestamo.telefonoCliente }}</td>
           <td>{{ prestamo.montoPrestamo }}</td>
+          <td>{{ prestamo.montoTotal }}</td>
+          <td>{{ prestamo.estado }}</td>
+          <td>{{ prestamo.fechaCreacion | date: 'dd-mm-yyyy' }}</td>
+          <td>{{ prestamo.fechaTermino }}</td>
           <td>
             <button class="btn btn-danger" (click)="eliminarPrestamo(prestamo)">Eliminar</button>
           </td>
