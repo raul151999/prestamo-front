@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Prestamo } from '../Interfaces/Prestamo';
 @Injectable({
   providedIn: 'root'
 })
 export class PrestamoService {
-  private apiUrl = 'https://www.apiprestamosupao.somee.com/api/Prestamos/';
+
+    private apiUrl = 'https://www.appprestamosbackend.somee.com/api/';
 
   constructor(private http: HttpClient) {}
 

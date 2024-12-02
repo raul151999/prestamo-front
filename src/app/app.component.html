@@ -1,57 +1,55 @@
 <div class="container">
   <h1>Gestión de Préstamos</h1>
-
   <div *ngIf="!isLoggedIn">
     <h2>Iniciar Sesión</h2>
     <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      
       <div class="form-group">
         <label for="username">Usuario:</label>
-        <input id="username" formControlName="username" class="form-control" required />
+        <input id="username" formControlName="username" class="form-control" autocomplete="off" />
       </div>
+
       <div class="form-group">
         <label for="password">Contraseña:</label>
-        <input id="password" type="password" formControlName="password" class="form-control" required />
+        <input id="password" type="password" formControlName="password" class="form-control" autocomplete="off" />
       </div>
+
       <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-    </form>
+
+    <p class="mt-3">
+      <a href="javascript:void(0)" (click)="openChangePasswordModal()">Cambiar Contraseña</a>
+    </p>
+  </form>
   </div>
+</div>
 
   <div *ngIf="isLoggedIn">
     <form [formGroup]="agregarPrestamo" (ngSubmit)="agregaPrestamo()">
+
       <div class="form-group">
-        <label for="dniCliente">DNI Cliente:</label>
-        <input id="dniCliente" formControlName="dniCliente" class="form-control" />
-        <div *ngIf="agregarPrestamo.get('dniCliente')?.touched && agregarPrestamo.get('dniCliente')?.invalid">
-          <small class="text-danger" *ngIf="agregarPrestamo.get('dniCliente')?.errors?.['required']">DNI es requerido.</small>
-          <small class="text-danger" *ngIf="agregarPrestamo.get('dniCliente')?.errors?.['minlength']">DNI debe tener exactamente 8 dígitos.</small>
-          <small class="text-danger" *ngIf="agregarPrestamo.get('dniCliente')?.errors?.['maxlength']">DNI debe tener exactamente 8 dígitos.</small>
-        </div>
+        <label for="idPrestamo">ID Préstamo:</label>
+        <input id="idPrestamo" formControlName="idPrestamo" class="form-control" [readonly]="true" />
       </div>
+
       <div class="form-group">
-        <label for="nombreCliente">Nombre Cliente:</label>
-        <input id="nombreCliente" formControlName="nombreCliente" class="form-control" />
+        <label for="dniCliente">Ingrese DNI o RUC:</label>
+        <input id="dniCliente" formControlName="dniCliente" class="form-control" [(ngModel)]="dni" maxlength="8" placeholder="Ingrese el DNI" (ngModelChange)="validarDni()" 
+        (blur)="validarDni()" />
+        <div *ngIf="dniInvalido" class="text-danger">DNI inválido, debe ser un número de 8 dígitos.</div>
       </div>
-      <div class="form-group">
-        <label for="apellidoCliente">Apellido Cliente:</label>
-        <input id="apellidoCliente" formControlName="apellidoCliente" class="form-control" />
+
+      <div *ngIf="resultado">
+        <h3>Resultado de la Consulta:</h3>
+        <p><strong>DNI:</strong> {{ resultado.data.number }}</p>
+        <p><strong>Apellido Completo:</strong> {{ resultado.data.surname }}</p>
+        <p><strong>Nombre Completo:</strong> {{ resultado.data.name }}</p>
+        <p><strong>Fecha de Nacimiento:</strong> {{ resultado.data.date_of_birth }}</p>
+        <p><strong>Departamento:</strong> {{ resultado.data.department }}</p>
+        <p><strong>Provincia:</strong> {{ resultado.data.province }}</p>
+        <p><strong>Distrito:</strong> {{ resultado.data.district }}</p>
+        <p><strong>Dirección:</strong> {{ resultado.data.address }}</p>
       </div>
-      <div class="form-group">
-        <label for="direccionCliente">Dirección Cliente:</label>
-        <input id="direccionCliente" formControlName="direccionCliente" class="form-control" />
-      </div>
-      <div class="form-group">
-        <label for="telefonoCliente">Teléfono Cliente:</label>
-        <input id="telefonoCliente" formControlName="telefonoCliente" class="form-control" />
-        <div *ngIf="agregarPrestamo.get('telefonoCliente')?.touched && agregarPrestamo.get('telefonoCliente')?.invalid">
-          <small class="text-danger" *ngIf="agregarPrestamo.get('telefonoCliente')?.errors?.['required']">El teléfono es requerido.</small>
-          <small class="text-danger" *ngIf="agregarPrestamo.get('telefonoCliente')?.errors?.['minlength']">El teléfono debe tener exactamente 9 dígitos.</small>
-          <small class="text-danger" *ngIf="agregarPrestamo.get('telefonoCliente')?.errors?.['maxlength']">El teléfono debe tener exactamente 9 dígitos.</small>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="emailCliente">Email Cliente:</label>
-        <input id="emailCliente" formControlName="emailCliente" class="form-control" />
-      </div>
+
       <div class="form-group">
         <label for="montoPrestamo">Monto Préstamo:</label>
         <input id="montoPrestamo" formControlName="montoPrestamo" type="number" class="form-control" />
@@ -63,6 +61,15 @@
       <div class="form-group">
         <label for="interesAplicado">Interés Aplicado (%):</label>
         <input id="interesAplicado" formControlName="interesAplicado" type="number" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label for="cuotaMensual">Cuota Mensual</label>
+        <input type="text" id="cuotaMensual" class="form-control" [value]="cuotaMensual" disabled />
+      </div>
+      
+      <div class="form-group">
+        <label for="totalIntereses">Total Intereses</label>
+        <input type="text" id="totalIntereses" class="form-control" [value]="totalIntereses" disabled />
       </div>
       <div class="form-group">
         <label for="montoTotal">Monto Total:</label>
@@ -77,45 +84,42 @@
         <input id="estado" formControlName="estado" class="form-control" />
       </div>
       <div class="form-group">
-        <label for="fechaCreacion">Fecha de Creación:</label>
-        <input id="fechaCreacion" formControlName="fechaCreacion" type="date" class="form-control" [disabled]="true"/>
+        <label for="fechaInicio">Fecha de Inicio:</label>
+        <input id="fechaInicio" formControlName="fechaInicio" type="text" class="form-control" [disabled]="true"/>
       </div>
       <div class="form-group">
-        <label for="fechaTermino">Fecha de Término:</label>
-        <input id="fechaTermino" formControlName="fechaTermino" type="text" class="form-control" placeholder="dd-mm-yyyy" [disabled]="true" />
+        <label for="fechaFinal">Fecha Final:</label>
+        <input id="fechaFinal" formControlName="fechaFinal" type="date" class="form-control" placeholder="dd-mm-yyyy" [disabled]="true" />
       </div>
       <button type="submit" class="btn btn-primary">Agregar Préstamo</button>
     </form>
-
+  
     <h2>Lista de Préstamos</h2>
     <table class="table">
       <thead>
         <tr>
+          <th>ID prestamo</th>
           <th>DNI Cliente</th>
           <th>Nombre</th>
           <th>Apellido</th>
-          <th>Dirección</th>
-          <th>Telefono</th>
           <th>Monto</th>
           <th>Monto Total</th>
           <th>Estado</th>
-          <th>Fecha Creacion</th>
-          <th>Fecha Termino</th>
-          <th>Acciones</th>
+          <th>Fecha Inicio</th>
+          <th>Fecha Final</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let prestamo of listaPrestamos">
+          <td>{{ prestamo.idPrestamo }}</td>
           <td>{{ prestamo.dniCliente }}</td>
           <td>{{ prestamo.nombreCliente }}</td>
           <td>{{ prestamo.apellidoCliente }}</td>
-          <td>{{ prestamo.direccionCliente }}</td>
-          <td>{{ prestamo.telefonoCliente }}</td>
           <td>{{ prestamo.montoPrestamo }}</td>
           <td>{{ prestamo.montoTotal }}</td>
           <td>{{ prestamo.estado }}</td>
-          <td>{{ prestamo.fechaCreacion | date: 'dd-mm-yyyy' }}</td>
-          <td>{{ prestamo.fechaTermino }}</td>
+          <td>{{ prestamo.fechaInicio | date: 'dd-mm-yyyy' }}</td>
+          <td>{{ prestamo.fechaFinal  | date: 'dd-mm-yyyy'}}</td>
           <td>
             <button class="btn btn-danger" (click)="eliminarPrestamo(prestamo)">Eliminar</button>
           </td>
@@ -123,4 +127,38 @@
       </tbody>
     </table>
   </div>
+  
+  <!-- Modal para cambiar contraseña -->
+  <!-- Modal para cambiar contraseña -->
+<div class="modal" tabindex="-1" [ngClass]="{'show': isChangePasswordModalOpen}" style="display: block;" *ngIf="isChangePasswordModalOpen">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cambiar Contraseña</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeChangePasswordModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
+          <div class="form-group">
+            <label for="newPassword">Nueva Contraseña</label>
+            <input type="password" id="newPassword" formControlName="newPassword" class="form-control" required="" />
+            <div *ngIf="changePasswordForm.get('newPassword')?.invalid && changePasswordForm.get('newPassword')?.touched" class="text-danger">
+              <div *ngIf="changePasswordForm.get('newPassword')?.errors?.['required']">La nueva contraseña es obligatoria.</div>
+              <div *ngIf="changePasswordForm.get('newPassword')?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar Contraseña</label>
+            <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control" required="" />
+            <div *ngIf="changePasswordForm.get('confirmPassword')?.invalid && changePasswordForm.get('confirmPassword')?.touched" class="text-danger">
+              <div *ngIf="changePasswordForm.get('confirmPassword')?.errors?.['required']">La confirmación de la contraseña es obligatoria.</div>
+              <div *ngIf="changePasswordForm.hasError('passwordMismatch')">Las contraseñas no coinciden.</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="changePasswordForm.invalid">Cambiar Contraseña</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
+

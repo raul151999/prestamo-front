@@ -1,36 +1,49 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Prestamo } from './Interfaces/Prestamo';
 import { PrestamoService } from './Services/prestamo.service';
+import { DniService } from './Services/dni.service';
+import { RucService } from './Services/ruc.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [ReactiveFormsModule, HttpClientModule, CommonModule, FormsModule]
+  imports: [ReactiveFormsModule, CommonModule, FormsModule]
 })
 export class AppComponent implements OnInit {
-  listaPrestamos: Prestamo[] = [];
+  listaPrestamos: any[] = [];
   agregarPrestamo: FormGroup;
   loginForm: FormGroup;
-  isLoggedIn = false; // Variable para controlar el estado de inicio de sesión
+  isLoggedIn: boolean = false; // Variable para controlar el estado de inicio de sesión
+  showChangePasswordModal: boolean = false; // Controla la visibilidad del modal de cambio de contraseña
   title = 'AppPrestamos';
+  dni: string = '';
+  ruc: string = '';
+  dniInvalido = false;
+  resultado: any;
+  resultadoruc: any;
+  respuestaDni: any;
+  errorMessage: string = '';
+  mensaje: string = '';
+  cliente: any = null;
+  cuotaMensual: string = '0.0';  
+  totalIntereses: string = '0.0';
+  changePasswordForm!: FormGroup;
+  isChangePasswordModalOpen: boolean = false;
   
 
   constructor(
-    private _PrestamoServicio: PrestamoService,
-    private fb: FormBuilder
+    private prestamoService: PrestamoService,
+    private fb: FormBuilder,
+    private dniService: DniService,
+    private rucService: RucService,
   ) {
     this.agregarPrestamo = this.fb.group({
-      dniCliente: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(8)]],
-      nombreCliente: ['', Validators.required],
-      apellidoCliente: ['', Validators.required],
-      direccionCliente: ['', Validators.required],
-      telefonoCliente: ['', [Validators.required, Validators.minLength(9), Validators.maxLength(9)]],
+      dniCliente: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(8), Validators.pattern('^[0-9]*$')]],
       emailCliente: ['', [Validators.required, Validators.email]],
       montoPrestamo: ['', [Validators.required, Validators.min(1)]],
       interesAplicado: [{ value: '', disabled: true }, Validators.required],
@@ -38,14 +51,14 @@ export class AppComponent implements OnInit {
       montoTotal: [{ value: '', disabled: true }, Validators.required],
       deudaRestante: [{ value: '', disabled: true }, Validators.required],
       estado: [{ value: 'ACTIVO', disabled: true }, Validators.required],
-      fechaCreacion: [{ value: this.obtenerFechaActualDDMMYYYY(), disabled: true }, Validators.required],
-      fechaTermino: [{ value: '', disabled: true }, Validators.required]
+      fechaInicio: [{ value: this.obtenerFechaActualDDMMYYYY(), disabled: true }, Validators.required],
+      fechaFinal: [{ value: '', disabled: true }, Validators.required],
     });
 
     this.loginForm = this.fb.group({
-      username: ['admin', Validators.required],
-      password: ['upao', Validators.required]
-    });
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    }, { autocomplete: 'off' });
   }
   // Convertir fecha de formato yyyy-mm-dd a dd-mm-yyyy
   convertirAFormatoDDMMYYYY(fecha: string): string {
@@ -83,8 +96,30 @@ export class AppComponent implements OnInit {
 
   return fechaFinal;
 }
+openChangePasswordModal(): void {
+  this.isChangePasswordModalOpen = true;
+}
+closeChangePasswordModal(): void {
+  this.isChangePasswordModalOpen = false;
+}
+onChangePassword() {
+  if (this.changePasswordForm.valid) {
+    // Aquí iría la lógica para cambiar la contraseña
+    window.alert('¡Contraseña cambiada con éxito!');
+    this.closeChangePasswordModal();
+  } else {
+    window.alert('Por favor, revisa los errores y vuelve a intentar.');
+  }
+}
 
-
+passwordMatchValidator(formGroup: FormGroup): { [key: string]: boolean } | null {
+  const newPassword = formGroup.get('newPassword')?.value;
+    const confirmPassword = formGroup.get('confirmPassword')?.value;
+    if (newPassword !== confirmPassword) {
+      return { 'passwordMismatch': true };
+    }
+    return null;
+}
   calcularFechaTermino() {
   const fechaCreacion = this.agregarPrestamo.get('fechaCreacion')?.value;
   const plazoMeses = this.agregarPrestamo.get('plazoMeses')?.value;
@@ -113,7 +148,7 @@ export class AppComponent implements OnInit {
 
   
   obtenerPrestamos() {
-    this._PrestamoServicio.getList().subscribe({
+    this.prestamoService.getList().subscribe({
       next: (data) => {
         this.listaPrestamos = data;
       },
@@ -139,6 +174,22 @@ export class AppComponent implements OnInit {
     this.agregarPrestamo.get('fechaCreacion')?.valueChanges.subscribe(() => {
       this.calcularFechaTermino();
     });
+
+    this.changePasswordForm = this.fb.group(
+      {
+        newPassword: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', Validators.required]
+      },
+      {
+        validators: this.passwordMatchValidator
+      }
+    );
+  }
+  calcularPagoMensual(montoPrestamo: number, interesAnual: number, plazoMeses: number): number {
+    const tasaMensual = interesAnual / 12 / 100; // Convertir tasa anual a mensual
+    const pagoMensual = (montoPrestamo * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -plazoMeses));
+  
+    return pagoMensual;
   }
   // Método para calcular el monto total y deuda restante basado en el plazo y monto prestado
   actualizarMontos() {
@@ -157,17 +208,23 @@ export class AppComponent implements OnInit {
     } else {
       interesAplicado = 20; // 20% si el plazo es mayor a 6 meses
     }
+    const cuotaMensual = this.calcularPagoMensual(montoPrestamo, interesAplicado, plazoMeses);
+
+    const totalIntereses = cuotaMensual * plazoMeses - montoPrestamo;
 
     // Calcular el monto total y la deuda restante
-    const montoTotal = montoPrestamo + (montoPrestamo * interesAplicado / 100);
+    const montoTotal = montoPrestamo + totalIntereses;
     const deudaRestante = montoTotal;
 
     // Actualizar los valores en el formulario
     this.agregarPrestamo.get('interesAplicado')?.setValue(interesAplicado);
     this.agregarPrestamo.get('montoTotal')?.setValue(montoTotal.toFixed(2)); // Formato con 2 decimales
     this.agregarPrestamo.get('deudaRestante')?.setValue(deudaRestante.toFixed(2)); // Inicialmente igual al monto total
-  }
 
+    this.cuotaMensual = cuotaMensual.toFixed(2); // Cuota mensual
+    this.totalIntereses = totalIntereses.toFixed(2); // Total de intereses
+  }
+  
   onLogin() {
     const { username, password } = this.loginForm.value;
     if (username === 'admin' && password === 'upao') {
@@ -199,19 +256,17 @@ export class AppComponent implements OnInit {
       nombreCliente: this.agregarPrestamo.get('nombreCliente')?.value,
       apellidoCliente: this.agregarPrestamo.get('apellidoCliente')?.value,
       direccionCliente: this.agregarPrestamo.get('direccionCliente')?.value,
-      telefonoCliente: this.agregarPrestamo.get('telefonoCliente')?.value,
-      emailCliente: this.agregarPrestamo.get('emailCliente')?.value,
       montoPrestamo: this.agregarPrestamo.get('montoPrestamo')?.value,
       interesAplicado: this.agregarPrestamo.get('interesAplicado')?.value,
       plazoMeses: this.agregarPrestamo.get('plazoMeses')?.value,
       montoTotal: this.agregarPrestamo.get('montoTotal')?.value,
       deudaRestante: this.agregarPrestamo.get('deudaRestante')?.value,
       estado: 'ACTIVO',
-      fechaCreacion: this.convertirAFormatoYYYYMMDD(this.agregarPrestamo.get('fechaCreacion')?.value), // Convertimos la fecha
-      fechaTermino: fechaTerminoFormatted, // Convertimos la fecha
+      fechaInicio: this.convertirAFormatoYYYYMMDD(this.agregarPrestamo.get('fechaCreacion')?.value), // Convertimos la fecha
+      fechaFinal: fechaTerminoFormatted, // Convertimos la fecha
     };
 
-    this._PrestamoServicio.add(request).subscribe({
+    this.prestamoService.add(request).subscribe({
       next: (data) => {
         this.listaPrestamos.push(data);
         this.agregarPrestamo.reset({
@@ -239,7 +294,7 @@ export class AppComponent implements OnInit {
 
   eliminarPrestamo(prestamo: Prestamo) {
     if (confirm('¿Estás seguro de que deseas eliminar este préstamo?')) {
-      this._PrestamoServicio.delete(prestamo.idPrestamo).subscribe({
+      this.prestamoService.delete(prestamo.idPrestamo).subscribe({
         next: () => {
           this.listaPrestamos = this.listaPrestamos.filter(p => p.idPrestamo !== prestamo.idPrestamo);
           console.log('Préstamo eliminado con éxito');
@@ -250,4 +305,68 @@ export class AppComponent implements OnInit {
       });
     }
   }
+   // Función para buscar el cliente en RENIEC usando el DNI
+   /*buscarCliente(): void {
+    if (this.dni.length === 8) {  // Verificar que el DNI tenga 8 caracteres
+      this.prestamoService.validarDni(this.dni).subscribe({
+        next: (response) => {
+          if (response && response.existe) {
+            this.cliente = response;  // Asignar cliente encontrado
+            this.agregarPrestamo.patchValue({
+              nombreCliente: response.nombres,
+              apellidoCliente: `${response.apellido_paterno} ${response.apellido_materno}`
+            });
+            this.errorMessage = '';  // Limpiar mensaje de error
+          } else {
+            this.cliente = null;
+            this.errorMessage = 'Cliente no encontrado o el DNI es incorrecto.';
+          }
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage = 'Hubo un error al consultar el DNI en RENIEC.';
+        }
+      });
+    } else {
+      this.errorMessage = 'El DNI debe tener 8 caracteres.';
+    }
+  }*/
+  validarDni() {
+    if (this.validarDniFormato(this.dni)) {
+    this.dniService.validarDniApi(this.dni).subscribe(
+      (data) => {
+        console.log('Datos recibidos:', data);
+        this.resultado = data;
+      },
+      (error) => {
+        // Aquí manejamos cualquier error que ocurra
+        console.error('Error en la solicitud:', error);
+      }
+    );
+  }
+}
+validarRuc() {
+  if (this.validarRucFormato(this.ruc)) {
+  this.rucService.validarRucApi(this.ruc).subscribe(
+    (data) => {
+      console.log('Datos recibidos:', data);
+      this.resultadoruc = data;
+    },
+    (error) => {
+      // Aquí manejamos cualquier error que ocurra
+      console.error('Error en la solicitud:', error);
+    }
+  );
+}
+}
+validarDniFormato(dni: string): boolean {
+  // Verifica si el DNI tiene exactamente 8 dígitos y son todos números
+  const dniPattern = /^\d{8}$/;
+  return dniPattern.test(dni); // Devuelve true si el patrón es válido
+}
+validarRucFormato(ruc: string): boolean {
+  // Verifica si el DNI tiene exactamente 8 dígitos y son todos números
+  const rucPattern = /^\d{11}$/;
+  return rucPattern.test(ruc); // Devuelve true si el patrón es válido
+}
 }

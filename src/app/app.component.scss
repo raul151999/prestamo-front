@@ -34,6 +34,11 @@ h1, h2 {
   margin-bottom: 1.5rem;
   text-align: center;
 }
+input[readonly] {
+  background-color: #f8f9fa;  // color de fondo para campos de solo lectura
+  cursor: not-allowed;  // para indicar que no se pueden editar
+}
+
 
 // Formularios
 .form-group {
